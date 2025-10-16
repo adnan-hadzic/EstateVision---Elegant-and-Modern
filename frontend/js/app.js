@@ -1,0 +1,1 @@
+console.log('EstateVision - Elegant & Modern ready');
