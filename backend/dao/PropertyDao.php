@@ -6,6 +6,14 @@ class PropertyDao extends BaseDao {
         parent::__construct('properties');
     }
 
+    public function getAllProperties() {
+        return parent::getAll();
+    }
+
+    public function getPropertyById($id) {
+        return parent::getById($id);
+    }
+
     public function getByAgentId($agentId) {
         $stmt = $this->connection->prepare("SELECT * FROM {$this->table} WHERE agent_id = :agent_id");
         $stmt->bindParam(':agent_id', $agentId);

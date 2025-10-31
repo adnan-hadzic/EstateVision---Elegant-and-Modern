@@ -7,17 +7,15 @@ class ReviewDao extends BaseDao {
     }
 
     public function addReview($review) {
-        $sql = "INSERT INTO {$this->table} (user_id, agent_id, property_id, rating, comment) 
-                VALUES (:user_id, :agent_id, :property_id, :rating, :comment)";
-        $stmt = $this->connection->prepare($sql);
-        $stmt->execute($review);
-        return $this->connection->lastInsertId();
+        return parent::insert($review);
     }
 
     public function getAllReviews() {
-        $stmt = $this->connection->prepare("SELECT * FROM {$this->table} ORDER BY created_at DESC");
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+       return parent::getAll();
+    }
+
+    public function getReviewById($id) {
+        return parent::getById($id);
     }
 
     public function getReviewsByAgent($agent_id) {

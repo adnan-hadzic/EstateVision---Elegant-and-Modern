@@ -6,17 +6,12 @@ class AppointmentDao extends BaseDao {
         parent::__construct('appointments');
     }
 
-    public function getAllAppointments() {
-        $stmt = $this->connection->prepare("SELECT * FROM {$this->table} ORDER BY scheduled_date DESC");
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+     public function getAllAppointments() {
+        return parent::getAll();
     }
-
-    public function getAppointmentById($appointment_id) {
-        $stmt = $this->connection->prepare("SELECT * FROM {$this->table} WHERE appointment_id = :appointment_id");
-        $stmt->bindParam(':appointment_id', $appointment_id);
-        $stmt->execute();
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    public function getAppointmentById($id) {
+        return parent::getById($id);
     }
 
     public function getAppointmentsByUser($user_id) {

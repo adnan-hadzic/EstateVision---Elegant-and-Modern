@@ -7,16 +7,11 @@ class AgentDao extends BaseDao {
     }
 
     public function getAllAgents() {
-        $stmt = $this->connection->prepare("SELECT * FROM {$this->table}");
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return parent::getAll();
     }
 
-    public function getAgentById($agent_id) {
-        $stmt = $this->connection->prepare("SELECT * FROM {$this->table} WHERE agent_id = :agent_id");
-        $stmt->bindParam(':agent_id', $agent_id);
-        $stmt->execute();
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+   public function getAgentById($id) {
+        return parent::getById($id);
     }
 
     public function getAgentByUserId($user_id) {
