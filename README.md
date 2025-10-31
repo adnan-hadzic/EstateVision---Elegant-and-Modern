@@ -10,10 +10,13 @@ Milestone 1 – Static Frontend
 -Implemented static pages: Home, Listings, About, Dashboard, Profile, Login, Register, Property Details
 -Consistent, modern and responsive design (EstateVision – Elegant & Modern theme)
 
+Milestone 2 – DAO Layer Implementation
+
+-Designed and implemented the Data Access Object (DAO) layer for five main entities: Users, Agents, Properties, Appointments, and Reviews. -Established full database relationships (foreign keys, cascades, and referential integrity) within the MySQL schema. -Implemented CRUD operations in each DAO with reusable base logic (BaseDao.php). -Successfully tested all DAO functionalities through PHP test scripts to ensure correct data insertion, retrieval, and relation handling. -Database exported and included as estatevision_db.sql.
+
 Upcoming Milestones
 
 -In the next stages of the project, EstateVision will be extended with a complete backend implementation using FlightPHP and MySQL.
--Milestone 2 will include database creation and the DAO layer with CRUD functionality for five main entities such as users, properties, and agents.
 -Milestone 3 will focus on completing full CRUD operations for all entities, introducing service logic and OpenAPI documentation.
 -Milestone 4 will add authentication, authorization, and middleware, connecting the backend with the SPA frontend and enabling role-based access for users and admins.
 -Finally, Milestone 5 will cover deployment, frontend–backend integration, form validations, and hosting the final live version of the application with complete documentation and CI/CD setup.
