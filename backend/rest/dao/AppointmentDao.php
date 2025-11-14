@@ -3,7 +3,7 @@ require_once 'BaseDao.php';
 
 class AppointmentDao extends BaseDao {
     public function __construct() {
-        parent::__construct('appointments');
+        parent::__construct('appointments', "appointment_id");
     }
 
      public function getAllAppointments() {

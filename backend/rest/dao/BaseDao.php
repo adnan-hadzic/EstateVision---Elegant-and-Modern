@@ -1,12 +1,14 @@
 <?php
-require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../../config.php';
 
 class BaseDao {
     protected $table;
+    protected $id_column;
     protected $connection;
 
-    public function __construct($table) {
+    public function __construct($table, $id_column = "id") {
         $this->table = $table;
+        $this->id_column = $id_column;
         $this->connection = Database::connect();
     }
 
@@ -17,7 +19,7 @@ class BaseDao {
     }
 
     public function getById($id) {
-        $stmt = $this->connection->prepare("SELECT * FROM {$this->table} WHERE id = :id");
+        $stmt = $this->connection->prepare("SELECT * FROM {$this->table} WHERE {$this->id_column} = :id");
         $stmt->bindParam(':id', $id);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
@@ -37,14 +39,15 @@ class BaseDao {
             $fields .= "$key = :$key, ";
         }
         $fields = rtrim($fields, ", ");
-        $sql = "UPDATE {$this->table} SET $fields WHERE id = :id";
+        $sql = "UPDATE {$this->table} SET $fields WHERE {$this->id_column} = :id";
         $stmt = $this->connection->prepare($sql);
         $data['id'] = $id;
+
         return $stmt->execute($data);
     }
 
     public function delete($id) {
-        $stmt = $this->connection->prepare("DELETE FROM {$this->table} WHERE id = :id");
+        $stmt = $this->connection->prepare("DELETE FROM {$this->table} WHERE {$this->id_column} = :id");
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
     }

@@ -3,7 +3,7 @@ require_once __DIR__ . '/BaseDao.php';
 
 class PropertyDao extends BaseDao {
     public function __construct() {
-        parent::__construct('properties');
+        parent::__construct('properties', "property_id");
     }
 
     public function getAllProperties() {

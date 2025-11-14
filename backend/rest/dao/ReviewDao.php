@@ -3,7 +3,7 @@ require_once 'BaseDao.php';
 
 class ReviewDao extends BaseDao {
     public function __construct() {
-        parent::__construct('reviews');
+        parent::__construct('reviews', "review_id" );
     }
 
     public function addReview($review) {
