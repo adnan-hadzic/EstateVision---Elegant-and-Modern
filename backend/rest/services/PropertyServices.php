@@ -21,6 +21,10 @@ class PropertyServices extends BaseService{
         return $this->dao->getRecentProperties($limit);
     }
 
+    public function getAllProperties(){
+        return $this->dao->getAllProperties();
+    }
+
 
 
 }

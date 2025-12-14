@@ -1,17 +1,81 @@
-<div class="container py-5">
-  <h2 class="mb-4 fw-semibold"><i class="bi bi-person-circle"></i> Profile</h2>
-  <form class="row g-3">
-    <div class="col-md-6">
-      <label class="form-label">Full Name</label>
-      <input class="form-control" disabled placeholder="John Doe">
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-white border-bottom-0 text-center pt-4">
+                    <div class="mb-2">
+                        <i class="bi bi-person-circle text-primary" style="font-size: 4rem;"></i>
+                    </div>
+                    <h4>My Profile</h4>
+                    <p class="text-muted">Manage your account settings</p>
+                </div>
+                
+                <div class="card-body px-4 pb-4">
+                    <form id="profileForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Email Address</label>
+                            <input type="email" class="form-control bg-light" id="profileEmail" readonly>
+                            <div class="form-text">Email cannot be changed.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Full Name</label>
+                            <input type="text" class="form-control" id="profileName">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">New Password</label>
+                            <input type="password" class="form-control" id="profilePass" placeholder="Leave empty to keep current">
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-primary" onclick="updateProfile()">
+                                <i class="bi bi-check-circle"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="col-md-6">
-      <label class="form-label">Email</label>
-      <input class="form-control" disabled placeholder="john@example.com">
-    </div>
-    <div class="col-12">
-      <label class="form-label">Role</label>
-      <input class="form-control" disabled placeholder="agent">
-    </div>
-  </form>
 </div>
+
+<script>
+
+    var profileCheckInterval = setInterval(function() {
+        if(document.getElementById('profileEmail')) {
+            loadProfileData();
+            clearInterval(profileCheckInterval);
+        }
+    }, 100);
+
+    function loadProfileData() {
+        const userJson = localStorage.getItem('user');
+        if(!userJson) return;
+
+        const user = JSON.parse(userJson);
+        
+        const emailInput = document.getElementById('profileEmail');
+        const nameInput = document.getElementById('profileName');
+
+        if(emailInput) emailInput.value = user.email;
+        if(nameInput) nameInput.value = user.full_name || user.name;
+    }
+
+    function updateProfile() {
+        const newName = document.getElementById('profileName').value;
+        const newPass = document.getElementById('profilePass').value;
+        
+        if(!newName) return alert("Name is required!");
+
+        const user = JSON.parse(localStorage.getItem('user'));
+        
+        user.full_name = newName; 
+        if(user.name) user.name = newName;
+
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        alert("Profile updated successfully!");
+        document.getElementById('profilePass').value = '';
+    }
+</script>
