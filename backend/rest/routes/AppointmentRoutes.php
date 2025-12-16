@@ -3,15 +3,13 @@
 /**
  * @OA\Get(
  *     path="/appointments",
- *     summary="Get all appointments",
+ *     summary="Get all appointments (Admin only)",
  *     tags={"Appointments"},
- *     @OA\Response(
- *         response=200,
- *         description="List of all appointments"
- *     )
+ *     @OA\Response(response=200, description="List of appointments")
  * )
  */
-Flight::route('GET /appointments', function () {
+Flight::route('GET /appointments', function(){
+    authorizeRole(Roles::ADMIN); 
     Flight::json(Flight::appointmentService()->getAll());
 });
 
@@ -20,129 +18,58 @@ Flight::route('GET /appointments', function () {
  *     path="/appointments/{id}",
  *     summary="Get appointment by ID",
  *     tags={"Appointments"},
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Appointment object"
- *     )
+ *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+ *     @OA\Response(response=200, description="Appointment details")
  * )
  */
-Flight::route('GET /appointments/@id', function ($id) {
-    Flight::json(Flight::appointmentService()->getById($id));
-});
-
-/**
- * @OA\Get(
- *     path="/appointments/user/{user_id}",
- *     summary="Get appointments for a specific user",
- *     tags={"Appointments"},
- *     @OA\Parameter(
- *         name="user_id",
- *         in="path",
- *         required=true,
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="List of user appointments"
- *     )
- * )
- */
-Flight::route('GET /appointments/user/@user_id', function ($user_id) {
-    Flight::json(Flight::appointmentService()->getAppointmentsByUser($user_id));
-});
-
-
-/**
- * @OA\Get(
- *     path="/appointments/agent/{agent_id}",
- *     summary="Get appointments for a specific agent",
- *     tags={"Appointments"},
- *     @OA\Parameter(
- *         name="agent_id",
- *         in="path",
- *         required=true,
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="List of agent appointments"
- *     )
- * )
- */
-Flight::route('GET /appointments/agent/@agent_id', function ($agent_id) {
-    Flight::json(Flight::appointmentService()->getAppointmentsByAgent($agent_id));
-});
-
-/**
- * @OA\Get(
- *     path="/appointments/upcoming",
- *     summary="Get upcoming appointments",
- *     tags={"Appointments"},
- *     @OA\Response(
- *         response=200,
- *         description="Upcoming appointments"
- *     )
- * )
- */
-Flight::route('GET /appointments/upcoming', function () {
-    Flight::json(Flight::appointmentService()->getUpcomingAppointments());
+Flight::route('GET /appointments/@id', function($id){
+    $user = Flight::get('user');
+    $appointment = Flight::appointmentService()->getById($id);
+    
+    if ($user->role === Roles::ADMIN) {
+        Flight::json($appointment);
+        return;
+    }
+    
+    if ($appointment['agent_id'] == $user->user_id || $appointment['user_id'] == $user->user_id) {
+        Flight::json($appointment);
+    } else {
+        Flight::halt(403, json_encode(['error' => 'Forbidden']));
+    }
 });
 
 /**
  * @OA\Post(
  *     path="/appointments",
- *     summary="Create a new appointment",
+ *     summary="Book a new appointment",
  *     tags={"Appointments"},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"user_id","agent_id","property_id","appointment_date"},
- *             @OA\Property(property="user_id", type="integer"),
- *             @OA\Property(property="agent_id", type="integer"),
- *             @OA\Property(property="property_id", type="integer"),
- *             @OA\Property(property="appointment_date", type="string", format="date-time"),
- *             @OA\Property(property="status", type="string")
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Appointment created"
- *     )
+ *     @OA\RequestBody(required=true, @OA\JsonContent()),
+ *     @OA\Response(response=200, description="Appointment booked")
  * )
  */
 Flight::route('POST /appointments', function () {
     $data = Flight::request()->data->getData();
+    $user = Flight::get('user');
+    if ($user->role !== Roles::ADMIN) {
+        $data['user_id'] = $user->user_id;
+        $data['status'] = 'pending'; // Default status
+    }
+    
     Flight::json(Flight::appointmentService()->insert($data));
 });
 
 /**
  * @OA\Put(
  *     path="/appointments/{id}",
- *     summary="Update an appointment",
+ *     summary="Update appointment (Admin & Agent)",
  *     tags={"Appointments"},
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\RequestBody(
- *         required=false,
- *         @OA\JsonContent()
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Appointment updated"
- *     )
+ *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+ *     @OA\RequestBody(required=true, @OA\JsonContent()),
+ *     @OA\Response(response=200, description="Appointment updated")
  * )
  */
 Flight::route('PUT /appointments/@id', function ($id) {
+    authorizeRoles([Roles::ADMIN, Roles::AGENT]); // ← Admin i Agent mogu menjati (npr. status)
     $data = Flight::request()->data->getData();
     Flight::json(Flight::appointmentService()->update($id, $data));
 });
@@ -150,22 +77,21 @@ Flight::route('PUT /appointments/@id', function ($id) {
 /**
  * @OA\Delete(
  *     path="/appointments/{id}",
- *     summary="Delete an appointment",
+ *     summary="Cancel appointment",
  *     tags={"Appointments"},
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Appointment deleted"
- *     )
+ *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+ *     @OA\Response(response=200, description="Appointment cancelled")
  * )
  */
 Flight::route('DELETE /appointments/@id', function ($id) {
-    Flight::json(Flight::appointmentService()->delete($id));
+    $user = Flight::get('user');
+    $appointment = Flight::appointmentService()->getById($id);
+    
+    if ($user->role === Roles::ADMIN || $appointment['user_id'] == $user->user_id) {
+        Flight::json(Flight::appointmentService()->delete($id));
+    } else {
+        Flight::halt(403, json_encode(['error' => 'Forbidden']));
+    }
 });
 
 ?>
