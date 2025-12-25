@@ -1,5 +1,14 @@
 <?php
 
+function trim_property_input($data) {
+    foreach ($data as $key => $value) {
+        if (is_string($value)) {
+            $data[$key] = trim($value);
+        }
+    }
+    return $data;
+}
+
 /**
  * @OA\Get(
  *     path="/properties",
@@ -37,11 +46,38 @@ Flight::route('GET /properties/@id', function($id){
 Flight::route('POST /properties', function () {
     authorizeRoles([Roles::ADMIN, Roles::AGENT]);
     
-    $data = Flight::request()->data->getData();
+    $data = trim_property_input(Flight::request()->data->getData());
     
     $user = Flight::get('user');
     if ($user->role === Roles::AGENT) {
-        $data['agent_id'] = $user->user_id;
+        $agent = Flight::agentService()->getAgentByUserId($user->user_id);
+        if (!$agent || empty($agent['agent_id'])) {
+            $created = Flight::agentService()->insert(['user_id' => $user->user_id]);
+            if (!$created) {
+                Flight::json(['error' => 'Agent profile not found for this user'], 400);
+                return;
+            }
+            $agent = Flight::agentService()->getAgentByUserId($user->user_id);
+        }
+        if (empty($agent['agent_id'])) {
+            Flight::json(['error' => 'Agent profile not found for this user'], 400);
+            return;
+        }
+        $data['agent_id'] = $agent['agent_id'];
+    }
+
+    $title = $data['title'] ?? null;
+    $price = $data['price'] ?? null;
+    $location = $data['location'] ?? null;
+    $propertyType = $data['property_type'] ?? null;
+
+    if (!$title || !$price || !$location || !$propertyType) {
+        Flight::json(['error' => 'title, price, location, and property_type are required'], 400);
+        return;
+    }
+    if ($user->role === Roles::ADMIN && empty($data['agent_id'])) {
+        Flight::json(['error' => 'agent_id is required for admin-created properties'], 400);
+        return;
     }
     
     Flight::json(Flight::propertyService()->insert($data));
@@ -59,7 +95,23 @@ Flight::route('POST /properties', function () {
  */
 Flight::route('PUT /properties/@id', function ($id) {
     authorizeRoles([Roles::ADMIN, Roles::AGENT]);
-    $data = Flight::request()->data->getData();
+    $data = trim_property_input(Flight::request()->data->getData());
+    if (array_key_exists('title', $data) && $data['title'] === '') {
+        Flight::json(['error' => 'title is required'], 400);
+        return;
+    }
+    if (array_key_exists('price', $data) && $data['price'] === '') {
+        Flight::json(['error' => 'price is required'], 400);
+        return;
+    }
+    if (array_key_exists('location', $data) && $data['location'] === '') {
+        Flight::json(['error' => 'location is required'], 400);
+        return;
+    }
+    if (array_key_exists('property_type', $data) && $data['property_type'] === '') {
+        Flight::json(['error' => 'property_type is required'], 400);
+        return;
+    }
     Flight::json(Flight::propertyService()->update($id, $data));
 });
 

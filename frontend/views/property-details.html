@@ -1,23 +1,83 @@
-<div class="container py-5">
-  <h2 class="mb-3 fw-semibold"><i class="bi bi-house-door"></i> Property Details</h2>
-  <img src="assets/img/house1.jpg" class="img-fluid rounded shadow-sm mb-4" alt="Property">
-  <div class="row g-4">
-    <div class="col-md-8">
-      <p class="text-muted">Spacious and bright home in the city center. This is static content for Milestone 1; later it will be replaced with dynamic data via AJAX.</p>
-      <ul class="list-group list-group-flush">
-        <li class="list-group-item">Location: Sarajevo — Center</li>
-        <li class="list-group-item">Rooms: 3</li>
-        <li class="list-group-item">Area: 120 m²</li>
-        <li class="list-group-item">Price: €180,000</li>
-      </ul>
-      <a href="#listings" class="btn btn-secondary mt-3"><i class="bi bi-arrow-left"></i> Back to listings</a>
-    </div>
-    <div class="col-md-4">
-      <div class="feature-card p-3">
-        <h6 class="fw-semibold mb-2">Contact an Agent</h6>
-        <p class="small text-muted mb-2">Ready to visit this property? Send us a request and we’ll connect you with a trusted agent.</p>
-        <button class="btn btn-brand w-100">Request a Visit</button>
-      </div>
-    </div>
+<div class="container py-5" id="propertyDetails">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+    <h2 class="mb-0 fw-semibold"><i class="bi bi-house-door"></i> Property Details</h2>
+    <a href="#listings" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back to listings</a>
   </div>
 </div>
+
+<script>
+  function formatPrice(value) {
+    if (typeof Intl !== 'undefined' && Intl.NumberFormat) {
+      return new Intl.NumberFormat('en-GB').format(value) + ' EUR';
+    }
+    return value + ' EUR';
+  }
+
+  function getPropertyIdFromHash() {
+    const hash = window.location.hash || '';
+    const query = hash.split('?')[1] || '';
+    const params = new URLSearchParams(query);
+    return params.get('id');
+  }
+
+  function renderNotFound(container) {
+    container.innerHTML = `
+      <div class="alert alert-warning mt-4">
+        <h5 class="mb-2">Property not found</h5>
+        <p class="mb-0">We could not find that listing. Please return to the listings page.</p>
+      </div>
+    `;
+  }
+
+  function renderPropertyDetails() {
+    const container = document.getElementById('propertyDetails');
+    if (!container) return;
+    const propertyId = getPropertyIdFromHash();
+    const property = window.ListingsService.getById(propertyId);
+    if (!property) {
+      renderNotFound(container);
+      return;
+    }
+
+    const features = (property.features || []).slice(0, 8);
+    const agent = property.agent || { name: 'EstateVision Agent', email: 'agent@estatevision.com', phone: '+387 61 000 000' };
+
+    container.innerHTML = `
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div>
+          <h2 class="mb-1 fw-semibold">${property.title}</h2>
+          <p class="text-muted mb-0"><i class="bi bi-geo-alt"></i> ${property.location}</p>
+        </div>
+        <div class="details-price">${formatPrice(property.price)}</div>
+      </div>
+      <img src="${property.image}" class="img-fluid rounded-4 shadow-sm mb-4 details-hero" alt="${property.title}">
+      <div class="row g-4">
+        <div class="col-lg-8">
+          <div class="details-meta mb-3">
+            <span><i class="bi bi-bed"></i> ${property.beds} Beds</span>
+            <span><i class="bi bi-droplet"></i> ${property.baths} Baths</span>
+            <span><i class="bi bi-aspect-ratio"></i> ${property.area} m2</span>
+            <span class="details-badge">${property.status}</span>
+          </div>
+          <p class="text-muted">${property.description}</p>
+          <h6 class="fw-semibold mt-4 mb-2">Features</h6>
+          <ul class="details-features">
+            ${features.map(function(feature) { return `<li>${feature}</li>`; }).join('')}
+          </ul>
+        </div>
+        <div class="col-lg-4">
+          <div class="feature-card p-4 details-contact">
+            <h6 class="fw-semibold mb-2">Contact an Agent</h6>
+            <p class="text-muted small mb-3">Ready to visit? Contact our trusted agent for this listing.</p>
+            <div class="mb-2"><strong>${agent.name}</strong></div>
+            <div class="small text-muted mb-1"><i class="bi bi-envelope"></i> ${agent.email}</div>
+            <div class="small text-muted"><i class="bi bi-telephone"></i> ${agent.phone}</div>
+            <button class="btn btn-brand w-100 mt-3">Request a Visit</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderPropertyDetails();
+</script>

@@ -3,6 +3,9 @@
         <h4 class="alert-heading">Welcome back, <span id="dashUsername">User</span>! 👋</h4>
         <p class="mb-0">Here is what's happening with your estate journey today.</p>
     </div>
+    <div id="adminInfoBox" class="alert alert-info shadow-sm d-none">
+        You have administrator privileges. You can manage users, listings, and reviews.
+    </div>
 
     <div class="row mt-4">
         <div class="col-md-4">
@@ -11,6 +14,7 @@
                 <h3 class="mt-2">0</h3>
                 <p class="text-muted">Saved Properties</p>
                 <button class="btn btn-outline-primary btn-sm">View List</button>
+                <div class="small text-muted mt-2">No saved properties yet. Explore listings to get started.</div>
             </div>
         </div>
 
@@ -20,6 +24,7 @@
                 <h3 class="mt-2">0</h3>
                 <p class="text-muted">Active Inquiries</p>
                 <button class="btn btn-outline-success btn-sm">Check Messages</button>
+                <div class="small text-muted mt-2">No inquiries yet. Your next lead will appear here.</div>
             </div>
         </div>
 
@@ -36,6 +41,89 @@
                 <h3 class="mt-2">Search</h3>
                 <p class="text-muted">Find New Home</p>
                 <button class="btn btn-primary btn-sm">Start Searching</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-1">
+        <div class="col-6 col-lg-3">
+            <div class="card shadow-sm p-3 h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="small text-muted">Total Properties</div>
+                        <div class="h5 mb-0" id="statTotalProperties">0</div>
+                    </div>
+                    <i class="bi bi-house-door text-primary fs-4"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card shadow-sm p-3 h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="small text-muted">Total Users</div>
+                        <div class="h5 mb-0">20</div>
+                    </div>
+                    <i class="bi bi-people text-success fs-4"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card shadow-sm p-3 h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="small text-muted">Pending Reviews</div>
+                        <div class="h5 mb-0">12</div>
+                    </div>
+                    <i class="bi bi-star text-warning fs-4"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card shadow-sm p-3 h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="small text-muted">New Messages</div>
+                        <div class="h5 mb-0">3</div>
+                    </div>
+                    <i class="bi bi-envelope text-danger fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminPanels" class="row g-3 mt-3 d-none">
+        <div class="col-lg-6">
+            <div class="card shadow-sm p-3 h-100">
+                <h6 class="fw-semibold mb-3">Recent Activity</h6>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>New user registered</span>
+                        <span class="text-muted small">2 hours ago</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Property added</span>
+                        <span class="text-muted small">Today</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Review pending approval</span>
+                        <span class="text-muted small">Yesterday</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Inquiry received</span>
+                        <span class="text-muted small">2 days ago</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm p-3 h-100">
+                <h6 class="fw-semibold mb-3">Quick Actions</h6>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-success" onclick="openAddPropertyModal()">Add Property</button>
+                    <a class="btn btn-outline-primary" href="#admin">Add User</a>
+                    <a class="btn btn-outline-secondary" href="#admin">Review Approvals</a>
+                </div>
             </div>
         </div>
     </div>
@@ -115,6 +203,7 @@
                         </div>
                     </div>
                 </form>
+                <div id="propertyMessage" class="alert d-none"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -124,7 +213,7 @@
     </div>
 </div>
 
-<script>A
+<script>
     (function initDashboard(){
         const user = JSON.parse(localStorage.getItem('user'));
         
@@ -134,17 +223,35 @@
             if(user.role === 'admin'){
                 document.getElementById('adminCard').classList.remove('d-none');
                 document.getElementById('userCard').classList.add('d-none');
+                document.getElementById('adminInfoBox').classList.remove('d-none');
+                document.getElementById('adminPanels').classList.remove('d-none');
             }
 
             if(user.role === 'agent'){
                 document.getElementById('agentSection').classList.remove('d-none');
             }
         }
+
+        if (window.ListingsService) {
+            const totalProperties = window.ListingsService.getAll().length;
+            const totalEl = document.getElementById('statTotalProperties');
+            if (totalEl) totalEl.textContent = totalProperties;
+        }
     })();
 
     let propModal;
+
+    function showPropertyMessage(message, isSuccess) {
+        const el = document.getElementById('propertyMessage');
+        if (!el) return;
+        el.textContent = message;
+        el.className = isSuccess ? 'alert alert-success' : 'alert alert-danger';
+        el.classList.remove('d-none');
+    }
     
     function openAddPropertyModal() {
+        const msg = document.getElementById('propertyMessage');
+        if (msg) msg.classList.add('d-none');
         propModal = new bootstrap.Modal(document.getElementById('addPropertyModal'));
         propModal.show();
     }
@@ -155,30 +262,40 @@
         const propertyData = {
             title: document.getElementById('propTitle').value,
             price: document.getElementById('propPrice').value,
-            location: document.getElementById('propAddress').value, 
+            location: document.getElementById('propAddress').value,
             description: document.getElementById('propDesc').value,
-            area: document.getElementById('propSize').value, 
+            area: document.getElementById('propSize').value,
             bedrooms: document.getElementById('propBeds').value,
             bathrooms: document.getElementById('propBaths').value,
-            property_type: 'apartment', 
-            agent_id: user.id || user.user_id 
+            property_type: 'apartment',
+            agent_id: user.id || user.user_id
         };
 
-        if(!propertyData.title || !propertyData.price) {
-            return alert("Title and Price are required!");
+        if (!propertyData.title || !propertyData.price || !propertyData.location) {
+            showPropertyMessage('Title, price, and location are required.', false);
+            return;
+        }
+        if (propertyData.title.trim().length < 3) {
+            showPropertyMessage('Title must be at least 3 characters.', false);
+            return;
+        }
+        if (Number(propertyData.price) <= 0) {
+            showPropertyMessage('Price must be greater than 0.', false);
+            return;
         }
 
-        RestClient.post('properties', propertyData, function(response){
-            alert("Success! Property added to database.");
-            
-            if(propModal) propModal.hide();
-            document.getElementById('propertyForm').reset();
-            
-            location.reload();
-            
-        }, function(error){
+        window.PropertyService.create(propertyData).then(function(result) {
+            if (result.ok) {
+                showPropertyMessage('Success! Property added to database.', true);
+                if (propModal) propModal.hide();
+                document.getElementById('propertyForm').reset();
+                location.reload();
+            } else {
+                showPropertyMessage(result.data?.message || result.data?.error || 'Error adding property.', false);
+            }
+        }).catch(function(error) {
             console.error("Error adding property:", error);
-            alert("Error adding property. Check console.");
+            showPropertyMessage('Error adding property. Check console.', false);
         });
     }
 </script>
