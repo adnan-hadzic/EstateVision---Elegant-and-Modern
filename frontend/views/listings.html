@@ -1,38 +1,62 @@
 <div class="container py-5">
-  <h2 class="mb-4 fw-semibold"><i class="bi bi-buildings"></i> Property Listings</h2>
-  <div class="row gy-4">
-    <div class="col-md-4">
-      <div class="card h-100">
-        <img src="assets/img/house1.jpg" class="card-img-top" alt="Modern House">
-        <div class="card-body">
-          <h5 class="card-title">Modern House — Center</h5>
-          <p class="card-text text-muted">3 bed · 2 bath · 120 m²</p>
-          <p class="fw-bold text-primary">€180,000</p>
-          <a href="#property-details?id=1" class="btn btn-outline-primary">View Details</a>
-        </div>
-      </div>
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h2 class="mb-1 fw-semibold"><i class="bi bi-buildings"></i> Property Listings</h2>
+      <p class="text-muted mb-0">Handpicked homes with verified details and premium presentation.</p>
     </div>
-    <div class="col-md-4">
-      <div class="card h-100">
-        <img src="assets/img/apartment2.jpg" class="card-img-top" alt="Apartment">
-        <div class="card-body">
-          <h5 class="card-title">Cozy Apartment — Ilidža</h5>
-          <p class="card-text text-muted">1 bed · 1 bath · 45 m²</p>
-          <p class="fw-bold text-primary">€62,000</p>
-          <a href="#property-details?id=2" class="btn btn-outline-primary">View Details</a>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card h-100">
-        <img src="assets/img/villa3.jpg" class="card-img-top" alt="Villa">
-        <div class="card-body">
-          <h5 class="card-title">Family Villa — Vogošća</h5>
-          <p class="card-text text-muted">4 bed · 3 bath · 220 m²</p>
-          <p class="fw-bold text-primary">€310,000</p>
-          <a href="#property-details?id=3" class="btn btn-outline-primary">View Details</a>
-        </div>
-      </div>
-    </div>
+    <span class="badge badge-soft">Updated listings</span>
   </div>
+  <div id="listingsGrid" class="row g-4"></div>
 </div>
+
+<script>
+  function formatPrice(value) {
+    if (typeof Intl !== 'undefined' && Intl.NumberFormat) {
+      return new Intl.NumberFormat('en-GB').format(value) + ' EUR';
+    }
+    return value + ' EUR';
+  }
+
+  function renderListings() {
+    const grid = document.getElementById('listingsGrid');
+    if (!grid) return;
+    const listings = window.ListingsService.getAll();
+    if (!listings.length) {
+      grid.innerHTML = '<div class="col-12 text-center text-muted">No listings available right now.</div>';
+      return;
+    }
+
+    grid.innerHTML = listings.map(function(item) {
+      return `
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="listing-card h-100">
+            <div class="listing-media">
+              <img src="${item.image}" alt="${item.title}">
+              <span class="listing-badge">${item.status}</span>
+            </div>
+            <div class="listing-body">
+              <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                  <h5 class="listing-title">${item.title}</h5>
+                  <p class="listing-location mb-2">${item.location}</p>
+                </div>
+                <div class="listing-price">${formatPrice(item.price)}</div>
+              </div>
+              <div class="listing-meta">
+                <span><i class="bi bi-bed"></i> ${item.beds} Beds</span>
+                <span><i class="bi bi-droplet"></i> ${item.baths} Baths</span>
+                <span><i class="bi bi-aspect-ratio"></i> ${item.area} m2</span>
+              </div>
+              <div class="listing-actions">
+                <a href="#property-details?id=${item.id}" class="btn btn-brand btn-sm">View Details</a>
+                <button class="btn btn-outline-secondary btn-sm" type="button"><i class="bi bi-bookmark"></i> Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  renderListings();
+</script>

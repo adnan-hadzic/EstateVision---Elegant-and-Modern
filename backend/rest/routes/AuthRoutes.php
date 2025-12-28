@@ -14,7 +14,26 @@ Flight::group('/auth', function() {
         $data = json_decode(Flight::request()->getBody(), true);
 
         if (!is_array($data)) {
-            Flight::halt(400, 'Invalid request payload');
+            Flight::json(['error' => 'Invalid request payload'], 400);
+            return;
+        }
+
+        foreach ($data as $key => $value) {
+            if (is_string($value)) {
+                $data[$key] = trim($value);
+            }
+        }
+
+        $email = $data['email'] ?? null;
+        $password = $data['password'] ?? null;
+        $fullName = $data['full_name'] ?? $data['name'] ?? null;
+        if (!$email || !$password || !$fullName) {
+            Flight::json(['error' => 'full_name, email, and password are required'], 400);
+            return;
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Flight::json(['error' => 'Invalid email format'], 400);
+            return;
         }
 
         $response = Flight::authService()->register($data);
@@ -25,7 +44,7 @@ Flight::group('/auth', function() {
                 'data' => $response['data']
             ]);
         } else {
-            Flight::halt(400, json_encode(['message' => $response['error']]));
+            Flight::json(['error' => $response['error']], 400);
         }
    });
 
@@ -40,7 +59,25 @@ Flight::group('/auth', function() {
         $data = json_decode(Flight::request()->getBody(), true);
 
         if (!is_array($data)) {
-            Flight::halt(400, 'Invalid request payload');
+            Flight::json(['error' => 'Invalid request payload'], 400);
+            return;
+        }
+
+        foreach ($data as $key => $value) {
+            if (is_string($value)) {
+                $data[$key] = trim($value);
+            }
+        }
+
+        $email = $data['email'] ?? null;
+        $password = $data['password'] ?? null;
+        if (!$email || !$password) {
+            Flight::json(['error' => 'email and password are required'], 400);
+            return;
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Flight::json(['error' => 'Invalid email format'], 400);
+            return;
         }
 
         $response = Flight::authService()->login($data);
@@ -52,7 +89,7 @@ Flight::group('/auth', function() {
                 'data' => $response['data']
             ]);
         } else {
-            Flight::halt(401, json_encode(['message' => $response['error']]));
+            Flight::json(['error' => $response['error']], 401);
         }
    });
 });

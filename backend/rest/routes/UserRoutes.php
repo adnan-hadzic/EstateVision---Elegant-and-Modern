@@ -1,5 +1,14 @@
 <?php
 
+function trim_user_input($data) {
+    foreach ($data as $key => $value) {
+        if (is_string($value)) {
+            $data[$key] = trim($value);
+        }
+    }
+    return $data;
+}
+
 /**
  * @OA\Get(
  *     path="/users",
@@ -11,7 +20,17 @@
  */
 Flight::route('GET /users', function(){
     authorizeRole(Roles::ADMIN);
-    Flight::json(Flight::userService()->getAll());
+    $users = Flight::userService()->getAll();
+    $filtered = array_map(function($user) {
+        return [
+            'id' => $user['user_id'] ?? $user['id'] ?? null,
+            'full_name' => $user['full_name'] ?? null,
+            'email' => $user['email'] ?? null,
+            'role' => $user['role'] ?? null,
+            'created_at' => $user['created_at'] ?? null
+        ];
+    }, $users);
+    Flight::json($filtered);
 });
 
 /**
@@ -46,9 +65,16 @@ Flight::route('GET /users/by-email', function(){
     authorizeRole(Roles::ADMIN);
     
     $email = Flight::request()->query['email'] ?? null;
+    if (is_string($email)) {
+        $email = trim($email);
+    }
 
     if (!$email) {
         Flight::json(['error' => 'Query param "email" is required'], 400);
+        return;
+    }
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        Flight::json(['error' => 'Invalid email format'], 400);
         return;
     }
 
@@ -95,7 +121,24 @@ Flight::route('GET /users/recent', function () {
 Flight::route('POST /users', function () {
     authorizeRole(Roles::ADMIN);
     
-    $data = Flight::request()->data->getData();
+    $data = trim_user_input(Flight::request()->data->getData());
+    if (isset($data['name']) && empty($data['full_name'])) {
+        $data['full_name'] = $data['name'];
+    }
+
+    $fullName = $data['full_name'] ?? null;
+    $email = $data['email'] ?? null;
+    $passwordHash = $data['password_hash'] ?? null;
+
+    if (!$fullName || !$email || !$passwordHash) {
+        Flight::json(['error' => 'full_name, email, and password_hash are required'], 400);
+        return;
+    }
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        Flight::json(['error' => 'Invalid email format'], 400);
+        return;
+    }
+
     Flight::json(Flight::userService()->insert($data));
 });
 
@@ -113,7 +156,19 @@ Flight::route('PUT /users/@id', function ($id) {
     $user = Flight::get('user');
     
     if ($user->role === Roles::ADMIN || $user->user_id == $id) {
-        $data = Flight::request()->data->getData();
+        $data = trim_user_input(Flight::request()->data->getData());
+        if (isset($data['email']) && (!filter_var($data['email'], FILTER_VALIDATE_EMAIL))) {
+            Flight::json(['error' => 'Invalid email format'], 400);
+            return;
+        }
+        if (array_key_exists('full_name', $data) && $data['full_name'] === '') {
+            Flight::json(['error' => 'full_name is required'], 400);
+            return;
+        }
+        if (array_key_exists('name', $data) && $data['name'] === '') {
+            Flight::json(['error' => 'name is required'], 400);
+            return;
+        }
         Flight::json(Flight::userService()->update($id, $data));
     } else {
         Flight::halt(403, json_encode(['error' => 'You can only update your own profile']));

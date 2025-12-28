@@ -23,4 +23,22 @@ Upcoming Milestones
 
 Author
 
+## 🌐 Live Demo
+
+The web application is deployed and available at:
+
+👉 **http://209.38.243.136**
+
+---
+
+## 🚀 Deployment
+
+The application is deployed on a DigitalOcean Ubuntu server using:
+- Apache 2
+- PHP 8.x
+- MySQL
+- Composer
+
+Backend REST API and frontend SPA are fully connected and running in production.
+
 Adnan Hadžić - Student of Information Technology, International Burch University (Sarajevo)

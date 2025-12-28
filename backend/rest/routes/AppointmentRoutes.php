@@ -1,5 +1,14 @@
 <?php
 
+function trim_appointment_input($data) {
+    foreach ($data as $key => $value) {
+        if (is_string($value)) {
+            $data[$key] = trim($value);
+        }
+    }
+    return $data;
+}
+
 /**
  * @OA\Get(
  *     path="/appointments",
@@ -48,11 +57,22 @@ Flight::route('GET /appointments/@id', function($id){
  * )
  */
 Flight::route('POST /appointments', function () {
-    $data = Flight::request()->data->getData();
+    $data = trim_appointment_input(Flight::request()->data->getData());
     $user = Flight::get('user');
     if ($user->role !== Roles::ADMIN) {
         $data['user_id'] = $user->user_id;
         $data['status'] = 'pending'; // Default status
+    }
+
+    $propertyId = $data['property_id'] ?? null;
+    $scheduledDate = $data['scheduled_date'] ?? null;
+    if (!$propertyId || !$scheduledDate) {
+        Flight::json(['error' => 'property_id and scheduled_date are required'], 400);
+        return;
+    }
+    if ($user->role === Roles::ADMIN && empty($data['user_id'])) {
+        Flight::json(['error' => 'user_id is required for admin-created appointments'], 400);
+        return;
     }
     
     Flight::json(Flight::appointmentService()->insert($data));
@@ -70,7 +90,15 @@ Flight::route('POST /appointments', function () {
  */
 Flight::route('PUT /appointments/@id', function ($id) {
     authorizeRoles([Roles::ADMIN, Roles::AGENT]); // ← Admin i Agent mogu menjati (npr. status)
-    $data = Flight::request()->data->getData();
+    $data = trim_appointment_input(Flight::request()->data->getData());
+    if (isset($data['scheduled_date']) && $data['scheduled_date'] === '') {
+        Flight::json(['error' => 'scheduled_date is required'], 400);
+        return;
+    }
+    if (isset($data['status']) && !in_array($data['status'], ['pending', 'confirmed', 'cancelled'], true)) {
+        Flight::json(['error' => 'Invalid status value'], 400);
+        return;
+    }
     Flight::json(Flight::appointmentService()->update($id, $data));
 });
 

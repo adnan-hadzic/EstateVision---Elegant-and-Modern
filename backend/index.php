@@ -16,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/config.php';
+require __DIR__ . '/data/Roles.php';
 
 require_once __DIR__ . '/rest/services/AuthService.php';
 require_once __DIR__ . '/rest/services/UserServices.php';
@@ -33,6 +34,18 @@ Flight::register('propertyService', 'PropertyServices');
 Flight::register('reviewService', 'ReviewServices');
 Flight::register('authMiddleware', 'AuthMiddleware');
 
+function authorizeRole($requiredRole) {
+    Flight::authMiddleware()->authorizeRole($requiredRole);
+}
+
+function authorizeRoles($roles) {
+    Flight::authMiddleware()->authorizeRoles($roles);
+}
+
+function authorizePermission($permission) {
+    Flight::authMiddleware()->authorizePermission($permission);
+}
+
 Flight::route('/*', function() {
    if (
        strpos(Flight::request()->url, '/auth/login') === 0 ||
@@ -41,7 +54,21 @@ Flight::route('/*', function() {
        return true; 
    } else {
        try {
-           $token = Flight::request()->getHeader("Authorization"); 
+           $token = Flight::request()->getHeader("Authorization");
+           if (!$token && isset($_SERVER['HTTP_AUTHORIZATION'])) {
+               $token = $_SERVER['HTTP_AUTHORIZATION'];
+           }
+           if (!$token && isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+               $token = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+           }
+           if (!$token && function_exists('getallheaders')) {
+               $allHeaders = getallheaders();
+               if (isset($allHeaders['Authorization'])) {
+                   $token = $allHeaders['Authorization'];
+               } elseif (isset($allHeaders['authorization'])) {
+                   $token = $allHeaders['authorization'];
+               }
+           }
            $token = str_replace('Bearer ', '', $token);
            if (Flight::authMiddleware()->verifyToken($token))
                return true;
